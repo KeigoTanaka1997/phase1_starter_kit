@@ -2,31 +2,46 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Phase 1 Starter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ToDo – Vanilla JS + localStorage</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <header class="container">
-      <h1>Phase 1 Starter</h1>
-      <p>AIに質問しながら、Keigoが最小のWebページを作る練習用です。</p>
+      <h1>KeigoのToDo（localStorage付き）</h1>
+      <p class="muted">ページをリロードしてもタスクは保存されます。</p>
     </header>
 
     <main class="container">
-      <section class="card">
-        <h2>レスポンシブ練習</h2>
-        <p>画面幅を変えて、レイアウトの動き方を確認してみましょう。</p>
-      </section>
+      <form id="todo-form" class="card" autocomplete="off" aria-label="タスク追加フォーム">
+        <label for="todo-input" class="sr-only">タスクを入力</label>
+        <div class="row">
+          <input id="todo-input" type="text" placeholder="やることを入力…" />
+          <button id="add-btn" type="submit" aria-label="追加">追加</button>
+        </div>
+      </form>
 
       <section class="card">
-        <h2>DOM操作</h2>
-        <p id="message">ボタンを押すとこのメッセージが変わります。</p>
-        <button id="toggleBtn">メッセージを変える</button>
+        <div class="row">
+          <strong>フィルタ:</strong>
+          <select id="filter">
+            <option value="all">すべて</option>
+            <option value="active">未完了</option>
+            <option value="completed">完了のみ</option>
+          </select>
+          <button id="clear-completed" class="ghost">完了を一括削除</button>
+        </div>
+
+        <ul id="todo-list" class="todo-list" aria-live="polite"></ul>
+
+        <div class="row end">
+          <span id="left-count" class="muted"></span>
+        </div>
       </section>
     </main>
 
     <footer class="container footer">
-      <small>© 2025 Phase 1</small>
+      <small>⌘/Ctrl+Enter でも追加できます。</small>
     </footer>
 
     <script src="./script.js"></script>
