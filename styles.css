@@ -26,10 +26,10 @@ button {
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid #ccc;
-  background: #f7f7f7;
+  background: #4688df;
   cursor: pointer;
 }
-button:hover { background: #efefef; }
+button:hover { background: #3363a2; }
 button.ghost { background: transparent; border-color: #ddd; }
 
 .todo-list { list-style: none; padding: 0; margin: 10px 0 0; }
