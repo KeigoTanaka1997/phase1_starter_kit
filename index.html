@@ -44,6 +44,17 @@
       <small>⌘/Ctrl+Enter でも追加できます。</small>
     </footer>
 
-    <script src="./script.js"></script>
+    <!-- 末尾の script を差し替え -->
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  // ここは後で config.js に切り出します（まずは直書きで可）
+  const SUPABASE_URL = "https://nuseknvjvrnyxoisssld.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51c2VrbnZqdnJueXhvaXNzc2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3NDk3NTIsImV4cCI6MjA3NDMyNTc1Mn0.pPgWqjqdCpBPalBZ05XB0vYlcBTx3X0XDxK_V_nXeRo";
+
+  window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+<script type="module" src="./script.js"></script>
+
   </body>
 </html>

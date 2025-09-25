@@ -1,13 +1,7 @@
-// ----- storage -----
-const STORAGE_KEY = "todos:v1";
-const load = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-const save = (data) => localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+// ---------- Supabase クライアント（index.html で window.supabase に注入済み） ----------
+const db = window.supabase;
 
-// ----- state -----
-let todos = load(); // [{id, title, completed}]
-let currentFilter = "all"; // all | active | completed
-
-// ----- dom refs -----
+// ---------- DOM ----------
 const $form = document.getElementById("todo-form");
 const $input = document.getElementById("todo-input");
 const $list = document.getElementById("todo-list");
@@ -15,17 +9,19 @@ const $filter = document.getElementById("filter");
 const $clearCompleted = document.getElementById("clear-completed");
 const $leftCount = document.getElementById("left-count");
 
-// ----- helpers -----
-const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+// ---------- state ----------
+let todos = [];
+let currentFilter = "all"; // all | active | completed
+
+// ---------- helpers ----------
+function byFilter(t) {
+  if (currentFilter === "active") return !t.completed;
+  if (currentFilter === "completed") return t.completed;
+  return true;
+}
 
 function render() {
-  // filter
-  const filtered = todos.filter((t) =>
-    currentFilter === "all" ? true :
-    currentFilter === "active" ? !t.completed : t.completed
-  );
-
-  // list
+  const filtered = todos.filter(byFilter);
   $list.innerHTML = "";
   for (const t of filtered) {
     const li = document.createElement("li");
@@ -35,15 +31,18 @@ function render() {
     const cb = document.createElement("input");
     cb.type = "checkbox";
     cb.checked = t.completed;
-    cb.ariaLabel = "完了切替";
-    cb.addEventListener("change", () => toggle(t.id));
+    cb.addEventListener("change", () => toggle(t.id, !t.completed));
 
     const title = document.createElement("div");
     title.className = "todo-title" + (t.completed ? " completed" : "");
     title.textContent = t.title;
     title.contentEditable = "true";
     title.spellcheck = false;
-    title.addEventListener("blur", () => edit(t.id, title.textContent.trim()));
+    title.addEventListener("blur", () => {
+      const next = title.textContent.trim();
+      if (!next) return remove(t.id);
+      if (next !== t.title) updateTitle(t.id, next);
+    });
 
     const del = document.createElement("button");
     del.className = "icon-btn";
@@ -55,66 +54,92 @@ function render() {
     $list.appendChild(li);
   }
 
-  // left count
-  const left = todos.filter(t => !t.completed).length;
+  const left = todos.filter((t) => !t.completed).length;
   $leftCount.textContent = `未完了: ${left} 件`;
 }
 
-function add(title) {
+// ---------- CRUD ----------
+async function fetchTodos() {
+  const { data, error } = await db
+    .from("todos")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error(error);
+    alert("読み込みに失敗しました");
+    return;
+  }
+  todos = data;
+  render();
+}
+
+async function add(title) {
   const clean = title.trim();
   if (!clean) return;
-  todos.unshift({ id: uid(), title: clean, completed: false });
-  save(todos);
-  render();
+  const { error } = await db.from("todos").insert({ title: clean, completed: false });
+  if (error) {
+    console.error(error);
+    alert("追加に失敗しました");
+    return;
+  }
+  await fetchTodos();
 }
 
-function toggle(id) {
-  todos = todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
-  save(todos);
-  render();
+async function toggle(id, completed) {
+  const { error } = await db.from("todos").update({ completed }).eq("id", id);
+  if (error) {
+    console.error(error);
+    alert("更新に失敗しました");
+    return;
+  }
+  // ローカル反映の即時性を高めるなら下記2行でもOK（最終的に再取得）
+  // todos = todos.map(t => t.id === id ? { ...t, completed } : t);
+  // render();
+  await fetchTodos();
 }
 
-function edit(id, nextTitle) {
-  const title = (nextTitle || "").trim();
-  if (!title) { remove(id); return; }
-  todos = todos.map(t => t.id === id ? { ...t, title } : t);
-  save(todos);
-  render();
+async function updateTitle(id, title) {
+  const { error } = await db.from("todos").update({ title }).eq("id", id);
+  if (error) {
+    console.error(error);
+    alert("更新に失敗しました");
+    return;
+  }
+  await fetchTodos();
 }
 
-function remove(id) {
-  todos = todos.filter(t => t.id !== id);
-  save(todos);
-  render();
+async function remove(id) {
+  const { error } = await db.from("todos").delete().eq("id", id);
+  if (error) {
+    console.error(error);
+    alert("削除に失敗しました");
+    return;
+  }
+  await fetchTodos();
 }
 
-function clearCompleted() {
-  todos = todos.filter(t => !t.completed);
-  save(todos);
-  render();
+async function clearCompleted() {
+  const { error } = await db.from("todos").delete().eq("completed", true);
+  if (error) {
+    console.error(error);
+    alert("一括削除に失敗しました");
+    return;
+  }
+  await fetchTodos();
 }
 
-// ----- events -----
+// ---------- events ----------
 $form.addEventListener("submit", (e) => {
   e.preventDefault();
   add($input.value);
   $input.value = "";
   $input.focus();
 });
-
-document.addEventListener("keydown", (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-    add($input.value);
-    $input.value = "";
-  }
-});
-
 $filter.addEventListener("change", (e) => {
   currentFilter = e.target.value;
   render();
 });
-
 $clearCompleted.addEventListener("click", clearCompleted);
 
-// 初回描画
-render();
+// 初回読み込み
+fetchTodos();
