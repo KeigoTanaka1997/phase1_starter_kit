@@ -11,6 +11,23 @@
       <h1>KeigoのToDo（localStorage付き）</h1>
       <p class="muted">ページをリロードしてもタスクは保存されます。</p>
     </header>
+<header class="container">
+  <h1>ToDo（Supabase + Auth）</h1>
+  <p class="muted">ログインすると「自分のToDo」だけが見えます。</p>
+
+  <div id="auth" class="card row">
+    <div id="auth-when-signed-out" class="row">
+      <input id="email" type="email" placeholder="you@example.com" />
+      <button id="signin">メールでログイン</button>
+      <small class="muted">※ 受信メールのリンク or コードで認証</small>
+    </div>
+
+    <div id="auth-when-signed-in" class="row" style="display:none;">
+      <span id="whoami" class="muted"></span>
+      <button id="signout" class="ghost">サインアウト</button>
+    </div>
+  </div>
+</header>
 
     <main class="container">
       <form id="todo-form" class="card" autocomplete="off" aria-label="タスク追加フォーム">
